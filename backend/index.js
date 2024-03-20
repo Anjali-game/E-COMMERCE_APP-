@@ -20,7 +20,7 @@ const PORT = process.env.PORT || 8080;
 const FRONTEND_URL = process.env.FRONTEND_URL;
 
 //MONGODB CONNECTION
-mongoose.connect("mongodb+srv://anjali:KmmgHp2eLd9sBiXk@anjalistore.wvl4gql.mongodb.net/?retryWrites=true&w=majority").then(() => console.log("Connected Successfully")).catch((e) => console.log(e))
+mongoose.connect(mongouri).then(() => console.log("Connected Successfully")).catch((e) => console.log(e))
 //schema
 const userSchema = new Schema({
   firstName: {
