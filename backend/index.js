@@ -9,23 +9,20 @@ dotenv.config();
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
-
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  next();
+});
+const mongouri= process.env.MONGODB_URL
 const PORT = process.env.PORT || 8080;
+const FRONTEND_URL = process.env.FRONTEND_URL;
+
 //MONGODB CONNECTION
-
-mongoose
-  .connect(
-    "mongodb+srv://anjali:KmmgHp2eLd9sBiXk@anjalistore.wvl4gql.mongodb.net/anjalistore?retryWrites=true&w=majority"
-  )
-
-  .then(() => {
-    console.log("Connected Successfully");
-  })
-  .catch((e) => console.log(e));
-
+mongoose.connect("mongodb+srv://anjali:KmmgHp2eLd9sBiXk@anjalistore.wvl4gql.mongodb.net/?retryWrites=true&w=majority").then(() => console.log("Connected Successfully")).catch((e) => console.log(e))
 //schema
-
-const userSchema = mongoose.Schema({
+const userSchema = new Schema({
   firstName: {
     type:String
     // required: true
@@ -62,10 +59,7 @@ app.get("/", (req, res) => {
 
 //signup api
 app.post("/Signup",  async(req, res) => {
-  
- // console.log(req.body);
   const { email } = req.body;
-
   const datauser = await userModel.findOne({ email: email });
   if (datauser) {
     res.json({ message: "Email id is already registered", alert: false });
@@ -78,23 +72,18 @@ app.post("/Signup",  async(req, res) => {
 
 //login api
 app.post("/login", async(req, res) => {
-  //console.log(req.body);
   const { email } = req.body;
-
   const datauser = await userModel.find({ email: email });
   if (!datauser) {
-    return res.json({
-      message: "Email id is not registered ,please signup",
-      alert: false,
-    });
+    return res.json({message: "Email id is not registered ,please signup",alert: false});
   }
-    console.log(datauser);
-    res.json({ message: "Logged in successfully",datauser,alert: true });
+  console.log(datauser);
+  res.json({ message: "Logged in successfully",datauser,alert: true });
 });
 
 //product section
 
-const schemaProduct = mongoose.Schema({
+const schemaProduct = new Schema({
   name: {
     type:String,
     required:true
@@ -119,32 +108,23 @@ const schemaProduct = mongoose.Schema({
 
 const productModel = mongoose.model("product", schemaProduct);
 module.exports = productModel
+
 //save product data in api
-
 app.post("/product", async (req, res) => {
-
-  const {name,category,image,price,description}=req.body;
-  console.log(req.body);
-//   const responce = JSON.stringify(req.body);
-//   res.json(responce);
-//   const newproduct = await productModel(req.body)
-//   res.json(newproduct);
   const data = await productModel.create(req.body);
   await data.save();
-  res.send ({message: "uploaded successfully",data:data});
+  res.json({message: "uploaded successfully",data:data});
 });
 
 // api for getting products
-
 app.get("/product", async (req, res) => {
-  const data = await productModel.find({})
-  //res.json(data);
-   res.send(JSON.stringify(data))
+  console.log("Products");
+  const data = await productModel.find({});
+  console.log("Data>>", data);
+  res.json(data);
 });
 
 // **** payment gateway***//
-
-
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 app.post("/create-checkout-session" , async(req,res) => {
   
@@ -175,19 +155,14 @@ app.post("/create-checkout-session" , async(req,res) => {
         }
       }),
 
-      success_url :"http://localhost:3000/success",
-      cancel_url : "http://localhost:3000/cancel",
+      success_url :`${FRONTEND_URL}/success`,
+      cancel_url : `${FRONTEND_URL}/cancel`,
     }
-
-
-   
-      const session = await stripe.checkout.sessions.create(params);
-
-     
-      res.status(200).json({ sessionId: session.id });
+    const session = await stripe.checkout.sessions.create(params);   
+    res.status(200).json({ sessionId: session.id });
   } catch (error) {
-      console.error("Error creating checkout session:", error.message);
-      res.status(500).json({ error: "Failed to create checkout session" });
+    console.error("Error creating checkout session:", error.message);
+    res.status(500).json({ error: "Failed to create checkout session" });
   }
   
 })
