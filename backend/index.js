@@ -6,7 +6,17 @@ const { Schema } = mongoose;
 const Stripe = require("stripe")
 dotenv.config();
 
+
 const app = express();
+const cloudinary = require('cloudinary');
+//Cloudinary configuration
+cloudinary.config({
+  cloud_name: process.env.Cloud_name,
+  api_key: process.env.Cloud_ApiKey,
+  api_secret: process.env.Cloud_ApiSecret,
+  secure: true
+});
+
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 app.use((req, res, next) => {
@@ -15,7 +25,7 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   next();
 });
-const mongouri= process.env.MONGODB_URL
+const mongouri= process.env.MONGODB_URL;
 const PORT = process.env.PORT || 8080;
 const FRONTEND_URL = process.env.FRONTEND_URL;
 
@@ -111,16 +121,18 @@ module.exports = productModel
 
 //save product data in api
 app.post("/product", async (req, res) => {
-  const data = await productModel.create(req.body);
+  const {name,category,image,price,description} = req.body;
+  const result = await cloudinary.uploader.upload(image);
+  const data = await productModel.create({
+    name,category,image: result.url,price,description
+  });
   await data.save();
   res.json({message: "uploaded successfully",data:data});
 });
 
 // api for getting products
 app.get("/product", async (req, res) => {
-  console.log("Products");
-  const data = await productModel.find({});
-  console.log("Data>>", data);
+  const data = await productModel.find();
   res.json(data);
 });
 
@@ -166,4 +178,5 @@ app.post("/create-checkout-session" , async(req,res) => {
   }
   
 })
+
 app.listen(PORT, () => console.log("Server is running at port :" + PORT));

@@ -39,8 +39,6 @@ function Signup() {
 
   const handleUploadProfileImage = async (e) => {
     const data = await ImagetoBase64(e.target.files[0]);
-    console.log(data);
-
     setData((preve) => {
       return {
         ...preve,
